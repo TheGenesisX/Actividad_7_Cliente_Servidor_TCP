@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-var stop chan bool
-
 // Proceso ...
 type Proceso struct {
 	ID       int
@@ -16,16 +14,11 @@ type Proceso struct {
 	InServer bool
 }
 
-func Imprimir(proc *Proceso, stop chan bool) {
+func imprimir(proc *Proceso) {
 	for {
-		select {
-		case <-stop:
-			return
-		default:
-			fmt.Printf("id %d: %d \n", proc.ID, proc.Step)
-			proc.Step++
-			time.Sleep(time.Millisecond * 500)
-		}
+		fmt.Printf("id %d: %d \n", proc.ID, proc.Step)
+		proc.Step++
+		time.Sleep(time.Millisecond * 500)
 	}
 }
 
@@ -50,9 +43,9 @@ func cliente() {
 		fmt.Println(err3)
 		return
 	}
-	// fmt.Println(fromServer)
 
-	go Imprimir(&fromServer, stop)
+	go imprimir(&fromServer)
+	client.Close()
 }
 
 func main() {
@@ -60,6 +53,4 @@ func main() {
 
 	var input string
 	fmt.Scanln(&input)
-
-	// stop <- true
 }

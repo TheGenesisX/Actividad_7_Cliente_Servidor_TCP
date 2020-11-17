@@ -15,24 +15,17 @@ type Proceso struct {
 }
 
 var procs []Proceso
-var InServerFlag chan int
 
-// Imprimir ...
-func Imprimir(proc *Proceso, InServerFlag chan int) {
+func imprimir(proc *Proceso) {
 	for {
-		select {
-		case id := <-InServerFlag:
-			if id == proc.ID {
-				return
-			} else {
-				fmt.Printf("id %d: %d \n", proc.ID, proc.Step)
-				proc.Step++
-			}
-		default:
+		switch proc.InServer {
+		case true:
 			fmt.Printf("id %d: %d \n", proc.ID, proc.Step)
 			proc.Step++
+			time.Sleep(time.Millisecond * 500)
+		case false:
+			return // Terminamos goroutine.
 		}
-		time.Sleep(time.Millisecond * 500)
 	}
 }
 
@@ -40,7 +33,8 @@ func servidor() {
 	procs = make([]Proceso, 5)
 	for i := int(0); i < 5; i++ {
 		procs[i] = Proceso{i, 0, true}
-		go Imprimir(&procs[i], InServerFlag)
+		// go imprimir(&procs[i], inServerFlag)
+		go imprimir(&procs[i])
 	}
 
 	server, err := net.Listen("tcp", ":9999")
@@ -80,16 +74,10 @@ func clientHandler(client net.Conn) {
 func start(client net.Conn) {
 	var sendToClient int
 
-	fmt.Println(procs)
-
 	for i := 0; i < len(procs); i++ {
-		fmt.Println("IDENTIFICADOR: ", i)
 		if procs[i].InServer == true {
 			procs[i].InServer = false
 			sendToClient = i
-			for _ = range procs {
-				InServerFlag <- i
-			} // We get it out of the server to give it to the client.
 			break
 		}
 	}
@@ -100,20 +88,16 @@ func start(client net.Conn) {
 	if err != nil {
 		fmt.Println(err)
 		procs[sendToClient].InServer = true
-		go Imprimir(&procs[sendToClient], InServerFlag)
-		//   procs[sendToClient].InServer = true
+		// go imprimir(&procs[sendToClient], inServerFlag)
+		go imprimir(&procs[sendToClient])
 	}
-	//   go proceso(&procesos[proceso_a_enviar])
-	//   return
-	// } else {
-	// //   estado_de_procesos[proceso_a_enviar] = false
-	// }
 	return
 }
 
 func continueInServer(proc *Proceso) {
 	procs[proc.ID].InServer = true
-	go Imprimir(&procs[proc.ID], InServerFlag)
+	// go imprimir(&procs[proc.ID], inServerFlag)
+	go imprimir(&procs[proc.ID])
 	return
 }
 
