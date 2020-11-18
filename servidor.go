@@ -33,7 +33,6 @@ func servidor() {
 	procs = make([]Proceso, 5)
 	for i := int(0); i < 5; i++ {
 		procs[i] = Proceso{i, 0, true}
-		// go imprimir(&procs[i], inServerFlag)
 		go imprimir(&procs[i])
 	}
 
@@ -82,13 +81,10 @@ func start(client net.Conn) {
 		}
 	}
 
-	fmt.Println("PROCESO A ENVIAR: ", sendToClient)
-
 	err := gob.NewEncoder(client).Encode(procs[sendToClient])
 	if err != nil {
 		fmt.Println(err)
 		procs[sendToClient].InServer = true
-		// go imprimir(&procs[sendToClient], inServerFlag)
 		go imprimir(&procs[sendToClient])
 	}
 	return
@@ -96,7 +92,7 @@ func start(client net.Conn) {
 
 func continueInServer(proc *Proceso) {
 	procs[proc.ID].InServer = true
-	// go imprimir(&procs[proc.ID], inServerFlag)
+	procs[proc.ID].Step = proc.Step
 	go imprimir(&procs[proc.ID])
 	return
 }

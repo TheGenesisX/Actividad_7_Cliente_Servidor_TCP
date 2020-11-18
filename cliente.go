@@ -16,15 +16,20 @@ type Proceso struct {
 
 func imprimir(proc *Proceso) {
 	for {
-		fmt.Printf("id %d: %d \n", proc.ID, proc.Step)
-		proc.Step++
-		time.Sleep(time.Millisecond * 500)
+		switch proc.InServer {
+		case false:
+			fmt.Printf("id %d: %d \n", proc.ID, proc.Step)
+			proc.Step++
+			time.Sleep(time.Millisecond * 500)
+		case true:
+			return
+		}
 	}
 }
 
-func cliente() {
+func main() {
 	proc := Proceso{0, 0, false}
-	var fromServer Proceso
+	// var fromServer Proceso
 
 	client, err := net.Dial("tcp", ":9999")
 	if err != nil {
@@ -32,25 +37,35 @@ func cliente() {
 		return
 	}
 
-	err2 := gob.NewEncoder(client).Encode(proc)
-	if err2 != nil {
-		fmt.Println(err2)
+	err = gob.NewEncoder(client).Encode(proc)
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
-	err3 := gob.NewDecoder(client).Decode(&fromServer)
-	if err3 != nil {
-		fmt.Println(err3)
+	err = gob.NewDecoder(client).Decode(&proc)
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
-	go imprimir(&fromServer)
+	go imprimir(&proc)
 	client.Close()
-}
-
-func main() {
-	go cliente()
 
 	var input string
-	fmt.Scanln(&input)
+	fmt.Scanln(&input) // Cuando queremos liberar al cliente del proceso que tiene.
+
+	client, err = net.Dial("tcp", ":9999")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = gob.NewEncoder(client).Encode(proc)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	client.Close()
 }
